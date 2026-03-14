@@ -6,13 +6,15 @@ This document outlines the structure, setup process, and basic operations for th
 
 ### 1. Prerequisites
 - Python 3.9+
+- [uv](https://github.com/astral-sh/uv) (Extremely fast Python package manager)
 - [Groq API Key](https://console.groq.com/keys)
 
 ### 2. Installation
-Clone the repository and install dependencies:
+Install dependencies using `uv`:
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
+This will create a `.venv` and install all packages from `pyproject.toml`.
 
 ### 3. Configuration
 Create a `.env` file in the root directory (one is already provided as a template) and add your Groq API key:
@@ -22,11 +24,11 @@ CHROMA_DB_PATH=./chroma_db
 ```
 
 ### 4. Running the Server
-Run the FastAPI application using Uvicorn:
+Run the FastAPI application using `uv`:
 ```bash
-python main.py
+uv run uvicorn main:app --reload
 ```
-The server will start at `http://0.0.0.0:8000`.
+The server will start at `http://127.0.0.1:8000`.
 
 ## 📁 Project Structure
 
@@ -46,7 +48,9 @@ backend/
 │       └── rag_engine.py      # Logic for Retrieval-Augmented Generation
 ├── .env                       # Environment variables (do not commit secrets)
 ├── main.py                    # Entry point for the FastAPI application
-└── requirements.txt           # Python dependencies
+├── pyproject.toml             # Project configuration and dependencies (uv)
+├── uv.lock                    # Locked dependency versions
+└── requirements.txt           # Legacy requirements (optional)
 ```
 
 ## 🛠️ API Endpoints
@@ -68,5 +72,6 @@ backend/
 - **Description**: Queries the vector store for relevant context and generates a response using Groq's LLM.
 
 ## 📝 Notes
+- **uv**: We use `uv` for lightning-fast environment management.
 - **ChromaDB**: The vector store is persisted in the path specified by `CHROMA_DB_PATH`.
 - **LLM Model**: Currently defaults to `llama-3.3-70b-versatile` via Groq.
