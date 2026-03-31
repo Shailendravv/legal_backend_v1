@@ -7,3 +7,10 @@ langchain
 langchain-community
 python-dotenv
 loguru
+
+sentence-transformers
+supabase
+rank-bm25
+requests
+beautifulsoup4
+playwright
