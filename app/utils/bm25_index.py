@@ -26,7 +26,7 @@ class BM25Index:
         Performs a keyword search and returns top n results with their original content and scores.
         """
         if self.index is None:
-            logger.error("BM25 index not built yet.")
+            logger.warning("BM25 index is currently empty. No documents were found for keyword search.")
             return []
 
         tokenized_query = query.lower().split()

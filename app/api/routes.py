@@ -1,16 +1,18 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from typing import List, Optional
+import uuid
+import json
 from app.core.logger import logger
 from app.services.rag_engine import rag_engine
 from app.db.session_store import session_store
-import json
 
 router = APIRouter()
 
 class ChatRequest(BaseModel):
     message: str
-    session_id: str
+    session_id: Optional[str] = None
 
 @router.get("/health")
 async def health_check():
@@ -19,14 +21,19 @@ async def health_check():
 
 @router.post("/chat")
 async def chat(request: ChatRequest):
-    logger.info(f"Received streaming chat request for session {request.session_id}")
+    # Generate a session_id if not provided
+    session_id = request.session_id or str(uuid.uuid4())
+    logger.info(f"Received streaming chat request for session {session_id}")
     
     async def event_generator():
         full_response = ""
         try:
             # Get history from session store
-            history_turns = session_store.get_history(request.session_id)
+            history_turns = session_store.get_history(session_id)
             history_dicts = [{"role": t.role, "content": t.content} for t in history_turns]
+
+            # Yield the session_id as the first event so the frontend can track it
+            yield f"data: {json.dumps({'session_id': session_id})}\n\n"
 
             # Stream from RAG Engine
             async for token in rag_engine.retrieve_and_generate(request.message, history_dicts):
@@ -36,8 +43,8 @@ async def chat(request: ChatRequest):
                 yield f"data: {json.dumps({'token': token})}\n\n"
             
             # Save the turn after completion
-            session_store.save_turn(request.session_id, "user", request.message)
-            session_store.save_turn(request.session_id, "assistant", full_response)
+            session_store.save_turn(session_id, "user", request.message)
+            session_store.save_turn(session_id, "assistant", full_response)
             
             yield "data: [DONE]\n\n"
         except Exception as e:
