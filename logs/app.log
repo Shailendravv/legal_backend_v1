@@ -1,0 +1,14 @@
+2026-04-03 07:52:21 | INFO     | app.core.logger:setup_logger:69 - Logger initialized successfully with async file sinking.
+2026-04-03 07:52:21 | INFO     | logging:callHandlers:1744 - Started server process [700]
+2026-04-03 07:52:21 | INFO     | logging:callHandlers:1744 - Waiting for application startup.
+2026-04-03 07:52:21 | INFO     | logging:callHandlers:1744 - Application startup complete.
+2026-04-03 07:52:29 | INFO     | logging:callHandlers:1744 - 127.0.0.1:61531 - "GET /docs HTTP/1.1" 200
+2026-04-03 07:52:30 | INFO     | logging:callHandlers:1744 - 127.0.0.1:61531 - "GET /openapi.json HTTP/1.1" 200
+2026-04-03 07:52:34 | INFO     | app.api.v1.routes:health_check:8 - Health check endpoint called
+2026-04-03 07:52:34 | INFO     | logging:callHandlers:1744 - 127.0.0.1:61531 - "GET /api/v1/health HTTP/1.1" 200
+2026-04-03 07:52:36 | INFO     | app.api.v1.routes:health_check:8 - Health check endpoint called
+2026-04-03 07:52:36 | INFO     | logging:callHandlers:1744 - 127.0.0.1:61531 - "GET /api/v1/health HTTP/1.1" 200
+2026-04-03 07:52:45 | INFO     | logging:callHandlers:1744 - Shutting down
+2026-04-03 07:52:45 | INFO     | logging:callHandlers:1744 - Waiting for application shutdown.
+2026-04-03 07:52:45 | INFO     | logging:callHandlers:1744 - Application shutdown complete.
+2026-04-03 07:52:45 | INFO     | logging:callHandlers:1744 - Finished server process [700]

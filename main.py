@@ -1,11 +1,15 @@
 import uvicorn
 from fastapi import FastAPI
 from app.core.logger import setup_logger
+from app.api.v1.routes import router as api_router
 
 # Initialize Logger
 setup_logger()
 
 app = FastAPI(title="Legal AI RAG Backend")
+
+# Include API routes
+app.include_router(api_router, prefix="/api/v1")
 
 
 if __name__ == "__main__":
