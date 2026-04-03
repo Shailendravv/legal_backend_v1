@@ -1,5 +1,9 @@
 import uvicorn
 from fastapi import FastAPI
+from app.core.logger import setup_logger
+
+# Initialize Logger
+setup_logger()
 
 app = FastAPI(title="Legal AI RAG Backend")
 
