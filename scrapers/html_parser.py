@@ -11,13 +11,15 @@ def parse_devgan_ipc_index(html: str) -> List[str]:
     # In Devgan.in, the sections are usually in a list or table
     for a in soup.find_all('a', href=True):
         href = a['href']
-        if '/ipc/section/' in href:
+        # Be more flexible with the link pattern
+        if '/ipc/section/' in href or 'section=' in href:
             if not href.startswith('http'):
-                href = f"https://www.devgan.in{href}"
+                # Ensure it has a domain
+                href = f"https://www.devgan.in{'' if href.startswith('/') else '/'}{href}"
             links.append(href)
     
-    unique_links = list(set(links))
-    logger.debug(f"Extracted {len(unique_links)} unique section links from index.")
+    unique_links = sorted(list(set(links))) # Sorted for consistency
+    logger.info(f"Extracted {len(unique_links)} unique section links from index.")
     return unique_links
 
 def parse_devgan_section_page(html: str, url: str) -> Optional[Dict]:

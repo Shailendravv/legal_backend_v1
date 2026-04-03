@@ -67,6 +67,8 @@ backend/
 If you want to get started immediately, run these commands in order:
 
 ```powershell
+uv init
+uv sync
 uv venv
 source .venv/Scripts/activate
 uv add -r requirements.txt

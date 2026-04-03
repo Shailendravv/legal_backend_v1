@@ -10,7 +10,11 @@ class Crawler:
 
     async def start(self):
         self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch(headless=True)
+        # Use args to hide playwright automation markers
+        self.browser = await self.playwright.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
         logger.info("Playwright browser started.")
 
     async def get_page_html(self, url: str) -> str:
@@ -20,12 +24,23 @@ class Crawler:
         if not self.browser:
             await self.start()
             
-        page: Page = await self.browser.new_page()
+        # Use a real user agent
+        context = await self.browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            # Optionally add more headers/fingerprints here
+        )
+        page: Page = await context.new_page()
         try:
-            # Respectful delay between requests
-            await asyncio.sleep(1)
+            # More generous delay to let bot-check JS run
+            await asyncio.sleep(4)
             logger.debug(f"Crawling URL: {url}")
-            await page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            
+            # Use networkidle to ensure JavaScript components load fully
+            response = await page.goto(url, timeout=40000, wait_until="networkidle")
+            
+            if response and response.status >= 400:
+                logger.warning(f"Got HTTP {response.status} for {url}")
+            
             html = await page.content()
             return html
         except Exception as e:
@@ -33,6 +48,7 @@ class Crawler:
             return ""
         finally:
             await page.close()
+            await context.close()
 
     async def stop(self):
         if self.browser:
