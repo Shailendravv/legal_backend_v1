@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from app.core.logger import setup_logger
-from app.api.v1.routes import router as api_router
+from app.api.v1.router import router as api_router
 
 # Initialize Logger
 setup_logger()
