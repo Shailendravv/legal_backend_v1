@@ -9,6 +9,7 @@ Follow the steps below to set up your development environment and start the proj
 ### Setup and Start
 
 ```bash
+uv init
 uv venv
 source .venv/Scripts/activate
 uv add -r requirements.txt
