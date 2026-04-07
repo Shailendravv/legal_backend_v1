@@ -50,3 +50,6 @@ desktop.ini
 
 # UV
 .uv/
+
+# plugin
+.agent/
