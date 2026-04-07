@@ -1,7 +1,13 @@
+import asyncio
+import sys
 import uvicorn
 from fastapi import FastAPI
 from app.core.logger import setup_logger
 from app.api.v1.router import router as api_router
+
+# Fix for Windows: Playwright requires ProactorEventLoop to support subprocesses
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 # Initialize Logger
 setup_logger()
