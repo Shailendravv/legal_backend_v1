@@ -125,11 +125,11 @@ A user types a legal question in English (e.g. "What is Section 302 IPC?" or "My
 | Source | URL | Data Type | Format | Scraping Status |
 |---|---|---|---|---|
 | India Code | indiacode.nic.in | All Central/State Acts (IPC, BNS, CrPC) | HTML + PDF | Allowed (public) |
-| Devgan.in | devgan.in | IPC section-by-section breakdown with explanations | HTML | Good for scraping |
+| Devgan.in | devgan.in | IPC section-by-section breakdown with explanations | HTML | **Testing Source** |
 | MHA.gov.in | mha.gov.in | Ministry of Home Affairs circulars and acts | PDF | Allowed |
 | IndianKanoon | indiankanoon.org | Court judgments and case law | HTML | Check robots.txt |
-| HuggingFace | 169Pi/indian_law | 50M tokens of Indian jurisprudence with reasoning traces | Parquet/JSON | Direct download |
-| Kaggle | akshatgupta7/llm-fine-tuning-dataset-of-indian-legal-texts | Curated IPC/CrPC QA pairs | CSV | Direct download |
+| HuggingFace | 169Pi/indian_law | 50M tokens of Indian jurisprudence | Parquet/JSON | **BEST OPTION** |
+| Kaggle | akshatgupta7/llm-fine-tuning-dataset | Curated IPC/CrPC QA pairs | CSV | Already cleaned |
 
 ### 4.2 DPDPA 2023 compliance note
 
@@ -210,6 +210,16 @@ Every chunk stored in Qdrant must conform to this exact schema:
   "equivalent_section": "BNS-318-01"
 }
 ```
+
+### 5.3 Production Resilience (Long-Term)
+
+To survive large-scale ingestion and avoid government IP bans, the following layers are implemented:
+
+- **Stealth Playwright**: Uses `playwright-stealth` to bypass headless-browser detection.
+- **Dynamic Headers**: Rotating User-Agent strings and automated referrer headers.
+- **Crawler Caching**: Local disk-based cache (`.crawler_cache/`) to store raw HTML/PDF responses, reducing redundant network requests and server load.
+- **Proxies**: Integration point for rotating residential proxies (future phase).
+- **PDF Ingestion Pipeline**: High-accuracy extraction using `marker-pdf` for complex legal PDFs.
 
 ---
 

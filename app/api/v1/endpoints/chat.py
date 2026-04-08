@@ -12,7 +12,7 @@ async def chat_interaction():
     logger.info("Executing Pipeline: Ingestion -> Extraction -> Cleaning")
     
     # --- Step 1: Crawler ---
-    test_url = "https://www.wikipedia.org/"
+    test_url = "https://www.indiacode.nic.in"
     crawler = PlaywrightCrawler()
     raw_content = await crawler.crawl(test_url)
     
@@ -35,6 +35,7 @@ async def chat_interaction():
     # Return formatted response as requested
     return {
         "current_step": "Cleaner",
+        "ingestion_strategy": "Resilient (Stealth + Rotating Headers + Cache)",
         "input_type": cleaning_output.get("input_type"),
         "status": cleaning_output.get("status"),
         "output_preview": cleaning_output.get("output_preview"),

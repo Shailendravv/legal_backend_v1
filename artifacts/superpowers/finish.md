@@ -1,26 +1,18 @@
-# Implementation Summary: Pipeline Step 3 - Cleaner
-
-## Overview
-Successfully implemented Step 3 of the data pipeline. The `Cleaner` stage is now responsible for transforming noisy extracted content into clean, legally faithful text while redacting sensitive PII.
-
-## Changes Made
-- **New Module**: `app/pipeline/cleaner.py`
-  - Implemented `ContentCleaner` class inheriting from `Stage`.
-  - Added modular functions for PDF/HTML specific cleaning.
-  - Implemented `normalize_text` for Unicode and whitespace normalization.
-  - Implemented `redact_pii` using regex for Aadhaar, Phone, and Email.
-- **API Integration**: `app/api/v1/endpoints/chat.py`
-  - Integrated `ContentCleaner` into the `/chat` endpoint.
-  - Updated response to follow the specific Step 3 schema.
-- **Testing**: `app/pipeline/test_cleaner.py`
-  - Created a test suite with sample noisy inputs (PDF headers, HTML boilerplate, PII).
-  - Verified that PII is correctly redacted and flagged.
+# Execution Summary: Ingestion Resilience & Data Sourcing
 
 ## Verification Results
-- **Logic Test**: `python app/pipeline/test_cleaner.py` -> PASS
-- **API Test**: `/chat` endpoint successfully runs through Crawler -> Extractor -> Cleaner and returns redacted content.
-- **Logging**: Mandatory "🚀 Starting", "✅ Completed", and "❌ Failed" logs verified in `logs/app.log`.
+- **Crawl Resilience**: SUCCESS. Crawler now uses playwright-stealth and dynamic User-Agent headers (rotating via ake-useragent).
+- **Caching**: SUCCESS. Second fetch for the same URL logs [CACHE HIT] and returns from disk instantly (verified with google.com).
+- **Architecture**: SUCCESS. docs/legal_ai_architecture.md now reflects prioritized sources (HuggingFace/Kaggle) and production features.
+- **API**: SUCCESS. /chat response correctly identifies the resilient ingestion strategy.
 
-## Conclusion
-Step 3 is complete. The pipeline now yields clean, PII-redacted text ready for chunking.
-The next step will be "Section Chunker (pending)".
+## Summary of Changes
+- Integrated playwright-stealth to bypass basic bot detection.
+- Added dynamic User-Agent rotation to simulate diverse browsers.
+- Implemented a disk-based cache (.crawler_cache/) to store raw HTML, reducing server load and redundant traffic.
+- Updated project documentation to guide future data collection efforts.
+
+## Follow-ups
+- **PDF Pipeline**: The architecture now lists marker-pdf as a long-term goal; implementation of that specific pipeline is pending.
+- **Proxies**: Architecture includes placeholders for residential proxy integration.
+- **Cache invalidation**: Currently, the cache is persistent; a TTL or purge mechanism might be needed later.

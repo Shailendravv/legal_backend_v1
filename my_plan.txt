@@ -6,3 +6,10 @@ Current Status:
 Step 1 (Ingestion): Operational (via PlaywrightCrawler).
 Step 2 (Extraction): Operational (via ContentExtractor).
 API Results: The /chat endpoint now returns the extracted content preview from the crawler's raw HTML.
+
+---------------------------------------------
+Crawler  giving error access denied for 
+1. "https://www.indiacode.nic.in"
+2. https://www.mha.gov.in
+3.  https://www.indiankanoon.org => (Site not available)
+4.

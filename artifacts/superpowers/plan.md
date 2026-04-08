@@ -1,43 +1,59 @@
-# Implementation Plan: Pipeline Step 3 - Cleaner
+# Implementation Plan: Ingestion Resilience & Data Sourcing
 
 ## Goal
-Implement Step 3 of the data pipeline: `Cleaner`. This step cleans noisy extracted content, removes boilerplate, normalizes text, and redacts PII while preserving legal structure and semantics.
+Implement the recommendations from the brainstorm: finalize high-quality data sources (HuggingFace/Kaggle) and enhance the Playwright crawler with production-grade resilience (stealth, rotating headers, caching).
 
-## Current Architecture
-- Step 1 (Crawler) is complete.
-- Step 2 (Content Extractor) is complete.
-- Basic FastAPI structure exists with `/chat` hijacking for verification.
+## Current State
+- `PlaywrightCrawler` exists with basic async/sync support for Windows.
+- `ContentExtractor` and `ContentCleaner` are functional and integrated in `/chat`.
+- Data sources are listed but not prioritized or fully utilized in the pipeline.
 
 ## Implementation Details
 
-### Module: `app/pipeline/cleaner.py`
-- `clean_content(input_data)`: Main entry point.
-- `clean_pdf_text(text)`: Remove page numbers, headers/footers, court stamps.
-- `clean_html_text(text)`: Remove navigation menus, footer/header boilerplate from markdown/text.
-- `normalize_text(text)`: Normalize whitespace and unicode characters (UTF-8).
-- `redact_pii(text)`: Use regex to replace Aadhaar, phone numbers, and emails with tags like `[REDACTED_AADHAAR]`.
+### 1. Document Architecture Updates
+- Update `docs/legal_ai_architecture.md` to:
+    - Mark HuggingFace (169Pi) as the primary/best source.
+    - Mark Devgan.in as the testing source.
+    - Add "Long-Term (production-grade)" section with Stealth, Proxies, Caching, and PDF pipeline.
 
-### API Update: `app/api/v1/endpoints/chat.py`
-- Modify `/chat` to return Step 3 output.
+### 2. Dependency Management
+- Install `playwright-stealth` and `fake-useragent`.
+- Update `pyproject.toml` if applicable.
 
-### Logging (Mandatory)
-- Log Start, End, and Error for each cleaning stage:
-  - `🚀 Starting: Cleaning - <stage>`
-  - `✅ Completed: Cleaning - <stage>`
-  - `❌ Failed: Cleaning - <stage>`
+### 3. Resilience Enhancements (`app/crawler/playwright_crawler.py`)
+- **Stealth**: Integrate `stealth_sync` (for Windows) and `stealth_async`.
+- **Rotating Headers**: use `fake-useragent` for dynamic User-Agent strings.
+- **Caching**: Implement a simple file-based cache (`.crawler_cache/`) to store URL contents and avoid redundant fetching.
+
+### 4. Verification Update (`app/api/v1/endpoints/chat.py`)
+- Log and display if content was retrieved from "CACHE" or "NETWORK".
+- Ensure stealth mode is active.
 
 ## Steps
 
-1. **Create Cleaner Module**: Create `app/pipeline/cleaner.py` with the `ContentCleaner` class and required modular functions.
-2. **Implement Text Normalization**: Whitespace and Unicode normalization.
-3. **Implement PII Redaction**: Regex-based redaction for Aadhaar, Phone, and Email.
-4. **Implement PDF-specific Cleaning**: Logic for page numbers and legal document headers.
-5. **Implement HTML-specific Cleaning**: Logic for boilerplate removal.
-6. **Integrate with API**: Update `/chat` router to use `clean_content`.
-7. **Final Verification**: Test with various noisy samples.
+1. **Step 1: Update Architecture Doc**
+   - Modify `docs/legal_ai_architecture.md`.
+   - *Verification*: View file to ensure markdown is correct.
+
+2. **Step 2: Install Dependencies**
+   - Run `pip install playwright-stealth fake-useragent`.
+   - *Verification*: `pip list | grep playwright-stealth`.
+
+3. **Step 3: Implement Stealth & Headers**
+   - Modify `PlaywrightCrawler` to apply stealth to the browser page.
+   - Inject rotating User-Agent headers.
+   - *Verification*: Test against a site that detects headless browsers (e.g., indiacode.nic.in).
+
+4. **Step 4: Implement Ingestion Cache**
+   - Create a disk cache for raw HTML.
+   - Use URL hashing for keys.
+   - *Verification*: Run crawler twice; second run should be instantaneous and log "Cache Hit".
+
+5. **Step 5: Final API Integration**
+   - Update `/chat` response to include `source_strategy` (e.g., "resilient_fetch").
+   - *Verification*: Hit `/chat` and observe response.
 
 ## Verification
-- Run `app/pipeline/cleaner.py` directly with a test script or use `/chat` endpoint.
-- Verify PII redaction: Ensure "1234 5678 9012" -> `[REDACTED_AADHAAR]`.
-- Verify whitespace: Ensure multiple spaces/newlines are normalized.
-- Check logs for the mandatory format.
+- Logs must show `[CACHE HIT]` or `[NETWORK FETCH]`.
+- Architecture document must reflect the new priorities.
+- Browser fingerprinting check (manual/log verification).
