@@ -1,30 +1,34 @@
 from fastapi import APIRouter
 from app.core.logger import logger
 from app.crawler.playwright_crawler import PlaywrightCrawler
+from app.pipeline.extractor import ContentExtractor
 
 router = APIRouter()
 
 @router.post("/chat")
 async def chat_interaction():
-    # TEST: Step 1 Implementation verification
-    logger.info("Chat interaction hijacking for Step 1 (Crawler) Verification")
+    # Pipeline Step 1 & 2 Verification
+    logger.info("Executing Pipeline: Ingestion -> Extraction")
     
-    # test_url = "https://example.com"
-    # test_url = "https://indiankanoon.org/doc/1070476/"
+    # --- Step 1: Crawler ---
     test_url = "https://www.wikipedia.org/"
     crawler = PlaywrightCrawler()
-    
-    # Execute the crawler (Step 1)
     raw_content = await crawler.crawl(test_url)
     
+    # --- Step 2: Content Extractor ---
+    extractor = ContentExtractor()
+    extraction_input = {
+        "source_type": "html",
+        "content": raw_content
+    }
+    
+    extraction_output = await extractor.run(extraction_input)
+    
+    # Return formatted response as requested
     return {
-        "step": "1",
-        "description": "Data Ingestion Pipeline: Playwright Crawler",
-        "status": "SUCCESS",
-        "input_url": test_url,
-        "raw_content_length": len(raw_content),
-        "logs": [
-            "[START] Step 1: Playwright Crawler - Fetching...",
-            f"[END] Step 1: Playwright Crawler - Fetched {len(raw_content)} chars."
-        ]
+        "current_step": "Content Extractor",
+        "input_type": extraction_output.get("input_type"),
+        "status": extraction_output.get("status"),
+        "output_preview": extraction_output.get("extracted_content")[:500] if isinstance(extraction_output.get("extracted_content"), str) else str(extraction_output.get("extracted_content")[:5]),
+        "next_step": "Cleaner (pending)"
     }

@@ -1,0 +1,8 @@
+1. I am following this approach after implementation of each pipeline step i am verifying that in /chat endpoint so that i have context like this pipeline is working correctly up to this step.
+2. Architecture first and second step are implemented for now i have taken wikipedia url for testing purpose but in future i will use the url 
+3. I have seen some response of this but i am thinking before implementation of vector database i should use the required url
+4. their is one file text_extractor.py in app/pipeline folder  i think in future we need to remove this and clean up the code.
+Current Status:
+Step 1 (Ingestion): Operational (via PlaywrightCrawler).
+Step 2 (Extraction): Operational (via ContentExtractor).
+API Results: The /chat endpoint now returns the extracted content preview from the crawler's raw HTML.
