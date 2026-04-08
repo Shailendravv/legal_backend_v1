@@ -1,45 +1,43 @@
-# Implementation Plan: Pipeline Step 2 - Content Extractor
+# Implementation Plan: Pipeline Step 3 - Cleaner
 
 ## Goal
-Implement Step 2 of the data pipeline: `Content Extractor`. This step converts various raw inputs (HTML, PDF, CSV, Parquet) into structured text, markdown, or lists of dicts.
+Implement Step 3 of the data pipeline: `Cleaner`. This step cleans noisy extracted content, removes boilerplate, normalizes text, and redacts PII while preserving legal structure and semantics.
 
 ## Current Architecture
 - Step 1 (Crawler) is complete.
+- Step 2 (Content Extractor) is complete.
 - Basic FastAPI structure exists with `/chat` hijacking for verification.
 
 ## Implementation Details
 
-### Dependencies
-- `beautifulsoup4`: HTML extraction.
-- `marker-pdf`: PDF to Markdown (preferred).
-- `pymupdf4llm`: Fallback PDF converter.
-- `pandas`: CSV/Parquet processing.
-- `pyarrow`: For Parquet support.
-
-### New Module: `app/pipeline/extractor.py`
-- `extract_content(input_data)`: Main entry point.
-- `extract_html(html_string)`: BS4 extraction (no scripts/styles).
-- `extract_pdf(file_path_or_url)`: PDF to Markdown converter.
-- `extract_csv(file_path)`: CSV to list of dicts.
+### Module: `app/pipeline/cleaner.py`
+- `clean_content(input_data)`: Main entry point.
+- `clean_pdf_text(text)`: Remove page numbers, headers/footers, court stamps.
+- `clean_html_text(text)`: Remove navigation menus, footer/header boilerplate from markdown/text.
+- `normalize_text(text)`: Normalize whitespace and unicode characters (UTF-8).
+- `redact_pii(text)`: Use regex to replace Aadhaar, phone numbers, and emails with tags like `[REDACTED_AADHAAR]`.
 
 ### API Update: `app/api/v1/endpoints/chat.py`
-- Modify `/chat` to return Step 2 output.
+- Modify `/chat` to return Step 3 output.
 
-### Logging
-- Logger implementation in each sub-function (Start, End, Error).
+### Logging (Mandatory)
+- Log Start, End, and Error for each cleaning stage:
+  - `🚀 Starting: Cleaning - <stage>`
+  - `✅ Completed: Cleaning - <stage>`
+  - `❌ Failed: Cleaning - <stage>`
 
 ## Steps
 
-1.  **Add Dependencies**: Add required libraries to `pyproject.toml` and reinstall.
-2.  **Create Extractor**: Create `app/pipeline/extractor.py` with the routing logic.
-3.  **Implement HTML Extraction**: Use BS4 to extract main text.
-4.  **Implement PDF Extraction**: Use `marker` to convert to Markdown.
-5.  **Implement CSV/Parquet Extraction**: Use pandas for tabular data.
-6.  **Integrate with API**: Update `/chat` router to use `extract_content`.
-7.  **Final Verification**: Test with sample inputs.
+1. **Create Cleaner Module**: Create `app/pipeline/cleaner.py` with the `ContentCleaner` class and required modular functions.
+2. **Implement Text Normalization**: Whitespace and Unicode normalization.
+3. **Implement PII Redaction**: Regex-based redaction for Aadhaar, Phone, and Email.
+4. **Implement PDF-specific Cleaning**: Logic for page numbers and legal document headers.
+5. **Implement HTML-specific Cleaning**: Logic for boilerplate removal.
+6. **Integrate with API**: Update `/chat` router to use `clean_content`.
+7. **Final Verification**: Test with various noisy samples.
 
 ## Verification
-- Test with HTML string.
-- Test with sample PDF path.
-- Test with sample CSV path.
-- Check logs for "🚀 Starting", "✅ Completed", and "❌ Failed" messages.
+- Run `app/pipeline/cleaner.py` directly with a test script or use `/chat` endpoint.
+- Verify PII redaction: Ensure "1234 5678 9012" -> `[REDACTED_AADHAAR]`.
+- Verify whitespace: Ensure multiple spaces/newlines are normalized.
+- Check logs for the mandatory format.

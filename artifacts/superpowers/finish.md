@@ -1,37 +1,26 @@
-# Finish: Step 2 - Content Extractor Implementation
+# Implementation Summary: Pipeline Step 3 - Cleaner
 
-## Summary of Changes
-- **Pipeline Stage**: `ContentExtractor` (Step 2) is now functional.
-- **HTML Extraction**: Uses BS4 for clean text extraction (no script/style tags).
-- **PDF Extraction**: Integrated `pymupdf4llm` for PDF-to-Markdown (Marker dependency is large/complex, PyMuPDF4LLM is stable).
-- **Tabular Extraction**: Uses `pandas` to extract JSON rows from CSV and Parquet.
-- **API Integration**: `/chat` endpoint now routes through Step 1 (Ingestion) and Step 2 (Extraction) sequentially.
-- **Logging**: Mandatory logs (START/END/ERROR) implemented as specified.
+## Overview
+Successfully implemented Step 3 of the data pipeline. The `Cleaner` stage is now responsible for transforming noisy extracted content into clean, legally faithful text while redacting sensitive PII.
 
-## Verification Run
-- **Command**: `uv run python app/pipeline/test_extractor.py`
-- **Output Preview**:
-  - `🚀 Starting: Content Extraction - html`
-  - `✅ Completed: Content Extraction - html`
-  - `🚀 Starting: Content Extraction - csv`
-  - `✅ Completed: Content Extraction - csv`
-  - `❌ Failed: Content Extraction - pdf | Error: PDF file not found at: non_existent.pdf`
+## Changes Made
+- **New Module**: `app/pipeline/cleaner.py`
+  - Implemented `ContentCleaner` class inheriting from `Stage`.
+  - Added modular functions for PDF/HTML specific cleaning.
+  - Implemented `normalize_text` for Unicode and whitespace normalization.
+  - Implemented `redact_pii` using regex for Aadhaar, Phone, and Email.
+- **API Integration**: `app/api/v1/endpoints/chat.py`
+  - Integrated `ContentCleaner` into the `/chat` endpoint.
+  - Updated response to follow the specific Step 3 schema.
+- **Testing**: `app/pipeline/test_cleaner.py`
+  - Created a test suite with sample noisy inputs (PDF headers, HTML boilerplate, PII).
+  - Verified that PII is correctly redacted and flagged.
 
-## Manual Validation
-- Run the FastAPI application: `uv run uvicorn main:app --reload`
-- Call POST `/api/v1/chat`:
-  - Request body (ignored currently, uses Wikipedia as test): `{}`
-  - Response:
-    ```json
-    {
-      "current_step": "Content Extractor",
-      "input_type": "html",
-      "status": "completed",
-      "output_preview": "<Clean extracted text from Wikipedia home page>",
-      "next_step": "Cleaner (pending)"
-    }
-    ```
+## Verification Results
+- **Logic Test**: `python app/pipeline/test_cleaner.py` -> PASS
+- **API Test**: `/chat` endpoint successfully runs through Crawler -> Extractor -> Cleaner and returns redacted content.
+- **Logging**: Mandatory "🚀 Starting", "✅ Completed", and "❌ Failed" logs verified in `logs/app.log`.
 
-## Follow-ups
-- Proceed to **Step 3: Cleaner** for stripping remaining noise and anonymizing PII.
-- Consider installing `marker-pdf` if higher MD accuracy is required for legal documents.
+## Conclusion
+Step 3 is complete. The pipeline now yields clean, PII-redacted text ready for chunking.
+The next step will be "Section Chunker (pending)".
