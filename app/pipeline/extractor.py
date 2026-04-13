@@ -26,6 +26,9 @@ class ContentExtractor(Stage):
         try:
             if source_type == "html":
                 extracted_content = self.extract_html(content)
+            elif source_type == "text":
+                # Pass-through for already extracted text (e.g. from dynamic crawler)
+                extracted_content = content
             elif source_type == "pdf":
                 extracted_content = self.extract_pdf(content)
             elif source_type in ["csv", "parquet"]:
