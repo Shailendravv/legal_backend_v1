@@ -1,9 +1,21 @@
-# Execution Notes: Unified Ingestion Architecture
+# Execution Log
 
-| Step | Status | Changes | Verification |
-| :--- | :--- | :--- | :--- |
-| **Plan Start** | Initialized | Plan updated to align with Readiness Report. | - |
-| **Step 1** | Completed | Created `app/pipeline/orchestrator.py`. | Ran `scratch/test_orchestrator.py` - PASS. |
-| **Step 2** | Completed | Installed `playwright-stealth`, `fake-useragent`, etc. | `pip list` confirmed presence. |
-| **Step 3** | Completed | Updated `PlaywrightCrawler` with dynamic UA rotation. | Code review of `multi_replace_file_content`. |
-| **Step 5** | Completed | Refactored `/chat` to use orchestrator & new response model. | Ran `scratch/test_full_pipeline.py` - PASS. |
+## Step 1: Install Dependencies
+- **Files changed**: N/A
+- **Changes**: Installed `datasets` library.
+- **Verification**: `pip show datasets` - Passed.
+
+## Step 2: Implement Base Handler & LocalFileHandler
+- **Files changed**: `app/pipeline/handlers.py`
+- **Changes**: Created `BaseHandler` and `LocalFileHandler`.
+- **Verification**: `scratch/test_pipeline_handlers.py` - Passed for text and dummy PDF.
+
+## Step 3: Implement HuggingFaceHandler
+- **Files changed**: `app/pipeline/handlers.py`
+- **Changes**: Added `HuggingFaceHandler` using `datasets` library with streaming support.
+- **Verification**: `scratch/test_pipeline_handlers.py` - Passed using `hf:imdb`.
+
+## Step 4: Update SourceOrchestrator
+- **Files changed**: `app/pipeline/orchestrator.py`
+- **Changes**: Integrated real handlers, added missing imports.
+- **Verification**: `scratch/test_pipeline_handlers.py` - Successfully routed all 3 sources.

@@ -1,60 +1,37 @@
-# Implementation Plan: Unified Ingestion Architecture & Resilience
+# Implementation Plan: Source Handlers (Local & HF)
 
 ## Goal
-Implement the Unified Ingestion Architecture as proposed in `docs/Ingestion_Pipeline_Readiness_Report.md`. This includes decoupling the crawler via a Source Orchestrator, enhancing the extractor for multi-source support, and hardening the Playwright crawler with production-grade resilience.
+Implement real `HuggingFaceHandler` and `LocalFileHandler` for the `SourceOrchestrator` to move away from mocked responses.
 
 ## Current State
-- `/chat` endpoint is tightly coupled to `PlaywrightCrawler`.
-- Crawler lacks full stealth and header rotation.
-- Extractor is functional but needs broader source support.
-
-## Implementation Details
-
-### 1. Source Orchestrator (`app/pipeline/orchestrator.py`)
-- Define `SourceOrchestrator` to dispatch tasks based on source type.
-- Supported types: `web` (via Playwright), `local` (files), `dataset` (HF/Kaggle).
-
-### 2. Extractor Enhancements (`app/pipeline/extractor.py`)
-- Standardize the `RawContent` object.
-- Add skeletons for Parquet/CSV and PDF handlers.
-
-### 3. Crawler Resilience (`app/crawler/playwright_crawler.py`)
-- Integrate `playwright-stealth`.
-- Implement dynamic User-Agent rotation.
-- Add disk caching at `.crawler_cache/`.
-
-### 4. API Redesign (`app/api/v1/endpoints/chat.py`)
-- Route all requests through the `SourceOrchestrator`.
-- Expand response to show metadata about the ingestion strategy and source.
+- `SourceOrchestrator` mocks `HF:` and local file paths.
+- `ContentExtractor` exists and can handle some file types but expects paths/content in a specific way.
+- `datasets` library (HuggingFace) is missing.
 
 ## Steps
 
-1. **Step 1: Create Source Orchestrator**
-   - Implement `app/pipeline/orchestrator.py`.
-   - *Verification*: Unit test or script to confirm routing logic.
+1. **Step 1: Install Dependencies**
+   - Install `datasets` for HuggingFace support.
+   - *Verification*: `pip show datasets`
 
-2. **Step 2: Install Dependencies**
-   - Run `pip install playwright-stealth fake-useragent`.
-   - *Verification*: `pip list | Select-String "playwright-stealth"`
+2. **Step 2: Implement Base Handler & LocalFileHandler**
+   - Create `app/pipeline/handlers.py`.
+   - Implement `LocalFileHandler` for reading `.pdf`, `.csv`, `.parquet`, and `.txt` files.
+   - *Verification*: Unit test reading a sample file.
 
-3. **Step 3: Harden Crawler (Resilience)**
-   - Update `PlaywrightCrawler` with stealth and header rotation.
-   - *Verification*: Log check for stealth activation.
+3. **Step 3: Implement HuggingFaceHandler**
+   - Implement `HuggingFaceHandler` in `app/pipeline/handlers.py`.
+   - Support `hf:dataset_name` loading.
+   - *Verification*: Script to load a small sample dataset (e.g., `tiny_shakespeare`).
 
-4. **Step 4: Implement Ingestion Cache**
-   - Add file-based caching to `PlaywrightCrawler`.
-   - *Verification*: Run twice, verify second hit is from cache.
+4. **Step 4: Update SourceOrchestrator**
+   - Integrate the real handlers into `app/pipeline/orchestrator.py`.
+   - *Verification*: Verify routing logic points to these handlers.
 
-5. **Step 5: Update Content Extractor**
-   - Refactor to handle multi-source outputs.
-   - *Verification*: Ensure existing tests still pass.
-
-6. **Step 6: Final API Integration & /chat Response**
-   - Refactor `/chat` to use orchestrator.
-   - Ensure the response contains all debugging info specified in the report and user request.
-   - *Verification*: API call to `/chat` with a query like "IPC 302".
+5. **Step 5: Final Verification**
+   - End-to-end test via `scratch/test_pipeline_handlers.py`.
 
 ## Verification
-- Logs must show `[ORCHESTRATOR] Routing to: WebCrawler`.
-- Logs must show `[CACHE HIT]` or `[NETWORK FETCH]`.
-- API response must include `source_strategy`, `resolved_act`, and `pii_flags`.
+- `[ORCHESTRATOR] Strategy: LocalFile` must return real content.
+- `[ORCHESTRATOR] Strategy: HuggingFace` must return real dataset content.
+- All errors (file not found, dataset not found) must be logged and handled gracefully.

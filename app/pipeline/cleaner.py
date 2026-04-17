@@ -1,6 +1,7 @@
 import re
 import unicodedata
-from typing import Any, Dict, Optional
+import json
+from typing import Any, Dict, Optional, Union, List
 from app.core.logger import logger
 from app.pipeline.base import Stage
 
@@ -32,13 +33,19 @@ class ContentCleaner(Stage):
         logger.info(f"🚀 Starting: Cleaning - {input_type}")
 
         try:
-            # 1. Type-specific cleaning
+            # 1. Tabular data handling (Conversion to text block)
+            if isinstance(data, list):
+                logger.info("📊 Cleaner: Converting list/tabular data to string for processing")
+                # Convert list of dicts to a formatted JSON-like string for easier cleaning/redaction
+                data = json.dumps(data, indent=2)
+
+            # 2. Type-specific cleaning
             if input_type == "pdf":
                 data = self.clean_pdf_text(data)
             elif input_type == "html":
                 data = self.clean_html_text(data)
             
-            # 2. Text Normalization (Mandatory for all types)
+            # 3. Text Normalization (Mandatory for all types)
             data = self.normalize_text(data)
 
             # 3. PII Redaction
@@ -141,7 +148,10 @@ class ContentCleaner(Stage):
             pii_flags["email"] = True
             text = re.sub(email_pattern, '[REDACTED_EMAIL]', text)
 
-        logger.info("✅ Completed: Cleaning - PII Redaction")
+        # Summary flag
+        pii_flags["pii_found"] = any(pii_flags.values())
+
+        logger.info(f"✅ Completed: Cleaning - PII Redaction | PII Found: {pii_flags['pii_found']}")
         return text, pii_flags
 
 # Functional shorthand for independent testing

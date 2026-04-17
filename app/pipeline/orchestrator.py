@@ -1,6 +1,8 @@
+import os
 from typing import Any, Dict
 from app.core.logger import logger
 from app.crawler.playwright_crawler import PlaywrightCrawler
+from app.pipeline.handlers import LocalFileHandler, HuggingFaceHandler
 
 class SourceOrchestrator:
     """
@@ -11,8 +13,8 @@ class SourceOrchestrator:
     def __init__(self):
         self.crawler = PlaywrightCrawler()
         # Other handlers will be initialized here as implemented
-        # self.hf_handler = HuggingFaceHandler()
-        # self.local_handler = LocalFileHandler()
+        self.hf_handler = HuggingFaceHandler()
+        self.local_handler = LocalFileHandler()
 
     async def route_and_fetch(self, source: str) -> Dict[str, Any]:
         """
@@ -20,12 +22,14 @@ class SourceOrchestrator:
         """
         logger.info(f"[ORCHESTRATOR] Routing source: {source}")
         
+        # 1. Web Source
         if source.startswith("http"):
             logger.info("[ORCHESTRATOR] Strategy: Web Crawler")
             crawl_result = await self.crawler.dynamic_crawl(source)
             return {
                 "source": source,
                 "strategy": f"WebCrawler ({crawl_result['strategy']})",
+                "source_type": "html",
                 "content": crawl_result["content"],
                 "metadata": {
                     "parsed_act": crawl_result.get("parsed_act"),
@@ -34,36 +38,43 @@ class SourceOrchestrator:
                 }
             }
         
+        # 2. Hugging Face Source
         elif source.startswith("HF:") or source.startswith("hf:"):
-            logger.info("[ORCHESTRATOR] Strategy: HuggingFace Dataset (Mocked)")
-            # Mocking HF for now as per Step 3 report gaps
+            logger.info("[ORCHESTRATOR] Strategy: HuggingFace Dataset")
+            hf_result = await self.hf_handler.fetch(source)
             return {
                 "source": source,
                 "strategy": "HuggingFace",
-                "content": "Sample content from HuggingFace dataset.",
-                "metadata": {"status": "mocked"}
+                "source_type": hf_result["source_type"],
+                "content": hf_result["content"],
+                "metadata": hf_result["metadata"]
             }
             
-        elif source.endswith((".pdf", ".parquet", ".csv")):
-            logger.info("[ORCHESTRATOR] Strategy: Structured/Static File (Mocked)")
-            return {
-                "source": source,
-                "strategy": "LocalFile",
-                "content": f"Sample binary content from {source}",
-                "metadata": {"status": "mocked"}
-            }
-            
-        else:
-            # Fallback for plain text queries (treated as search)
-            logger.info("[ORCHESTRATOR] Strategy: Query-to-Search (Playwright)")
-            crawl_result = await self.crawler.dynamic_crawl(source)
-            return {
-                "source": source,
-                "strategy": f"SearchCrawler ({crawl_result['strategy']})",
-                "content": crawl_result["content"],
-                "metadata": {
-                    "parsed_act": crawl_result.get("parsed_act"),
-                    "parsed_section": crawl_result.get("parsed_section"),
-                    "status": "success"
+        # 3. Local File Source
+        elif source.endswith((".pdf", ".parquet", ".csv", ".txt", ".md")) or os.path.isabs(source):
+            # Also check if it's a file path even if no standard extension
+            if os.path.exists(source) or source.endswith((".pdf", ".parquet", ".csv", ".txt", ".md")):
+                logger.info("[ORCHESTRATOR] Strategy: Local File")
+                local_result = await self.local_handler.fetch(source)
+                return {
+                    "source": source,
+                    "strategy": "LocalFile",
+                    "source_type": local_result["source_type"],
+                    "content": local_result["content"],
+                    "metadata": local_result["metadata"]
                 }
+            
+        # 4. Search Query Fallback
+        logger.info("[ORCHESTRATOR] Strategy: Query-to-Search (Playwright)")
+        crawl_result = await self.crawler.dynamic_crawl(source)
+        return {
+            "source": source,
+            "strategy": f"SearchCrawler ({crawl_result['strategy']})",
+            "source_type": "text",
+            "content": crawl_result["content"],
+            "metadata": {
+                "parsed_act": crawl_result.get("parsed_act"),
+                "parsed_section": crawl_result.get("parsed_section"),
+                "status": "success"
             }
+        }

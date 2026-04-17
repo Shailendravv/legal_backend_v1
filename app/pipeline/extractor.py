@@ -80,15 +80,19 @@ class ContentExtractor(Stage):
         md_text = pymupdf4llm.to_markdown(pdf_path)
         return md_text
 
-    def extract_tabular(self, file_path: str, file_type: str) -> List[Dict[str, Any]]:
-        """Extracts rows from CSV or Parquet as a list of dicts."""
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"{file_type.upper()} file not found at: {file_path}")
+    def extract_tabular(self, input_data: Union[str, List[Dict[str, Any]]], file_type: str) -> List[Dict[str, Any]]:
+        """Extracts rows from CSV/Parquet file path OR returns a list of dicts directly."""
+        if isinstance(input_data, list):
+            logger.info(f"📊 Input for {file_type} is already a list of records.")
+            return input_data
+
+        if not os.path.exists(input_data):
+            raise FileNotFoundError(f"{file_type.upper()} file not found at: {input_data}")
 
         if file_type == "csv":
-            df = pd.read_csv(file_path)
+            df = pd.read_csv(input_data)
         elif file_type == "parquet":
-            df = pd.read_parquet(file_path)
+            df = pd.read_parquet(input_data)
         else:
             raise ValueError(f"Unsupported tabular type: {file_type}")
 

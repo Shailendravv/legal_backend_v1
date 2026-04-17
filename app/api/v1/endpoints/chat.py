@@ -25,18 +25,26 @@ async def chat_interaction(request: ChatRequest):
     # --- Step 2: Content Extractor ---
     extractor = ContentExtractor()
     extraction_input = {
-        "source_type": "text" if "text" in source_result.get("strategy", "").lower() or "search" in source_result.get("strategy", "").lower() else "html",
+        "source_type": source_result.get("source_type", "html"),
         "content": source_result["content"]
     }
     extraction_output = await extractor.run(extraction_input)
     
     # --- Step 3: Cleaner ---
-    cleaner = ContentCleaner()
-    cleaning_input = {
-        "type": "text",
-        "data": extraction_output.get("extracted_content")
-    }
-    cleaning_output = await cleaner.run(cleaning_input)
+    if extraction_output.get("status") == "completed" and extraction_output.get("extracted_content"):
+        cleaner = ContentCleaner()
+        cleaning_input = {
+            "type": extraction_output.get("input_type", "text"),
+            "data": extraction_output.get("extracted_content")
+        }
+        cleaning_output = await cleaner.run(cleaning_input)
+    else:
+        # Fallback for empty or failed extraction
+        cleaning_output = {
+            "current_step": "Cleaner",
+            "status": "skipped",
+            "reason": "No content extracted to clean"
+        }
     
     # --- Return Detailed Debug Response ---
     return {
