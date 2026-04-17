@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.core.logger import logger
-from app.crawler.playwright_crawler import PlaywrightCrawler
+from app.pipeline.orchestrator import SourceOrchestrator
 from app.pipeline.extractor import ContentExtractor
 from app.pipeline.cleaner import ContentCleaner
 
@@ -13,22 +13,20 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 async def chat_interaction(request: ChatRequest):
     """
-    Takes JSON input from frontend: { "user_query": "IPC 420" }
+    Unified Ingestion API: Orchestrates Source -> Extraction -> Cleaning
     """
     user_query = request.user_query
-    # Pipeline Step 1, 2 & 3 Verification with Dynamic Search
-    logger.info(f"Executing Dynamic Pipeline for query: {user_query}")
+    logger.info(f"🚀 [UNIFIED PIPELINE] Internalizing query: {user_query}")
     
-    # --- Step 1: Dynamic Crawler ---
-    crawler = PlaywrightCrawler()
-    crawl_result = await crawler.dynamic_crawl(user_query)
-    raw_content = crawl_result["content"]
+    # --- Step 1: Source Orchestrator (The Inlet) ---
+    orchestrator = SourceOrchestrator()
+    source_result = await orchestrator.route_and_fetch(user_query)
     
     # --- Step 2: Content Extractor ---
     extractor = ContentExtractor()
     extraction_input = {
-        "source_type": "text", # Using text as input from dynamic crawl
-        "content": raw_content
+        "source_type": "text" if "text" in source_result.get("strategy", "").lower() or "search" in source_result.get("strategy", "").lower() else "html",
+        "content": source_result["content"]
     }
     extraction_output = await extractor.run(extraction_input)
     
@@ -40,16 +38,32 @@ async def chat_interaction(request: ChatRequest):
     }
     cleaning_output = await cleaner.run(cleaning_input)
     
-    # Return formatted response as requested
+    # --- Return Detailed Debug Response ---
     return {
-        "current_step": "Cleaner",
-        "query": user_query,
-        "resolved_act": crawl_result["parsed_act"],
-        "resolved_section": crawl_result["parsed_section"],
-        "ingestion_strategy": f"Dynamic ({crawl_result['strategy']})",
-        "input_type": cleaning_output.get("input_type"),
-        "status": cleaning_output.get("status"),
-        "output_preview": cleaning_output.get("output_preview"),
-        "pii_flags": cleaning_output.get("pii_flags"),
-        "next_step": "Section Chunker (pending)"
+        "pipeline_metadata": {
+            "query": user_query,
+            "orchestrator_strategy": source_result["strategy"],
+            "source_resolved": source_result["source"],
+            "status": "success" if cleaning_output.get("status") == "completed" else "partial_failure"
+        },
+        "legal_context": {
+            "resolved_act": source_result["metadata"].get("parsed_act"),
+            "resolved_section": source_result["metadata"].get("parsed_section"),
+            "source_reliability": "high" if "direct_url" in source_result["strategy"] else "medium"
+        },
+        "processing_stages": {
+            "extraction": {
+                "input_type": extraction_output.get("input_type"),
+                "status": extraction_output.get("status")
+            },
+            "cleaning": {
+                "pii_detected": cleaning_output.get("pii_flags", {}).get("pii_found", False),
+                "anonymization": "applied" if cleaning_output.get("pii_flags", {}).get("pii_found", False) else "none"
+            }
+        },
+        "output": {
+            "preview": cleaning_output.get("output_preview"),
+            "full_content_length": len(cleaning_output.get("output_preview", "")) if cleaning_output.get("output_preview") else 0,
+            "next_steps": ["Semantic Chunking", "Embedding Generation", "Qdrant Upsert"]
+        }
     }

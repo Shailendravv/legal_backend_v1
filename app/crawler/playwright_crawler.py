@@ -81,8 +81,8 @@ def parse_legal_query(query: str) -> ParsedQuery:
 class PlaywrightCrawler(BaseCrawler):
     def _sync_crawl(self, url: str) -> str:
         """Synchronous version of the crawler for Windows compatibility."""
-        # High-trust fixed Chrome/Windows UA to match Client Hints
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+        ua = UserAgent()
+        user_agent = ua.random
         
         with sync_playwright() as p:
             # Use real chrome if available for better fingerprinting
@@ -190,7 +190,8 @@ class PlaywrightCrawler(BaseCrawler):
                 raise e
 
         try:
-            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+            ua = UserAgent()
+            user_agent = ua.random
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
                     headless=True,
@@ -278,7 +279,8 @@ class PlaywrightCrawler(BaseCrawler):
         strategy_used = "none"
 
         async with async_playwright() as p:
-            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+            ua = UserAgent()
+            user_agent = ua.random
             browser = await p.chromium.launch(headless=True, args=['--disable-blink-features=AutomationControlled'])
             context = await browser.new_context(
                 user_agent=user_agent,
@@ -354,7 +356,8 @@ class PlaywrightCrawler(BaseCrawler):
         result_text, strategy_used = None, "none"
 
         with sync_playwright() as p:
-            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+            ua = UserAgent()
+            user_agent = ua.random
             browser = p.chromium.launch(headless=True, args=['--disable-blink-features=AutomationControlled'])
             context = browser.new_context(
                 user_agent=user_agent, 
